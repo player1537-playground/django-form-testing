@@ -5,9 +5,8 @@ worker_processes  1;
 #error_log  logs/error.log;
 #error_log  logs/error.log  notice;
 #error_log  logs/error.log  info;
-error_log logs/logs-error.log;
+error_log logs/error.log;
 pid logs/nginx.pid;
-
 
 events {
     worker_connections  1024;
@@ -15,11 +14,13 @@ events {
 
 
 http {
-	# client_body_temp_path /tmp/body-temp-path/;
+    proxy_cache_path cache levels=1:2 keys_zone=my_cache:10m max_size=10g
+    inactive=60m use_temp_path=off;
+    # client_body_temp_path /tmp/body-temp-path/;
 
     default_type  application/octet-stream;
     # Otherwise CSS and images are served as octet stream
-	include       /etc/nginx/mime.types;
+    include       /etc/nginx/mime.types;
 
     log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
     '$status $body_bytes_sent "$http_referer" '
@@ -54,7 +55,7 @@ http {
         }
 
         location /static {
-        	alias $PWD/$STATIC_PATH;
+            alias $PWD/$STATIC_PATH;
     	}
 
         location /api/ {

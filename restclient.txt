@@ -1,0 +1,3 @@
+# Get posts
+GET http://127.0.0.1/api/blog/posts
+Accept: application/json

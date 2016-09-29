@@ -21,7 +21,7 @@ endif
 .PHONY: nginx/run
 nginx/run: nginx/.env nginx/nginx.conf | nginx/logs
 	$(load-env) && \
-	$(nginx_command) -c $(notdir $(word 2,$^)) -g 'daemon off;' -p nginx
+	$(nginx_command) -p nginx -c $(notdir $(word 2,$^)) -g 'daemon off;'
 
 .PHONY: nginx/depend
 nginx/depend:
