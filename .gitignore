@@ -21,3 +21,4 @@ nginx/static
 *.pyc
 *.orig
 shared
+.env.201*

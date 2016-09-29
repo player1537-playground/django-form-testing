@@ -81,7 +81,7 @@ shared shared/static:
 .env: .env.base
 	touch $@
 	cp $@ $@.$(date)
-	./scripts/env.bash merge $@.bak $< > $@
+	./scripts/env.bash merge $@.$(date) $< > $@
 
 .env.makefile: .env
 	./scripts/env.bash to-makefile > $@
