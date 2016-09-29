@@ -20,7 +20,6 @@ http {
 
     default_type  application/octet-stream;
     # Otherwise CSS and images are served as octet stream
-    include       /etc/nginx/mime.types;
 
     log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
     '$status $body_bytes_sent "$http_referer" '
