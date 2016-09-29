@@ -4,4 +4,7 @@ import VueResource from 'vue-resource';
 Vue.use(VueResource);
 
 export default {
+  posts: {
+    schema: Vue.resource('/api/blog/schema/'),
+  },
 }

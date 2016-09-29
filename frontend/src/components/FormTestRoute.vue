@@ -3,9 +3,9 @@
     <div class="col-xs-9">
       <panel>
         <span slot="title">FormTest</span>
-        <vue-form-generator :schema="schema" :model="model"></vue-form-generator>
-        <p>name: {{ model.name }}</p>
-        <p>email: {{ model.email }}</p>
+        <template v-if="schema">
+          <vue-form-generator :schema="schema" :model="model"></vue-form-generator>
+        </template>
       </panel>
     </div>
   </div>
@@ -14,6 +14,7 @@
 <script>
 import Panel from './Panel.vue';
 import { component as VueFormGenerator } from 'vue-form-generator';
+import resource from '../resource';
 
 export default {
   name: 'FormTestRoute',
@@ -23,31 +24,19 @@ export default {
     VueFormGenerator,
   },
 
+  route: {
+    data({ next, abort }) {
+      resource.posts.schema.get().then((response) => {
+        next(response.json());
+      }).catch((response) => {
+        abort(response.json());
+      });
+    },
+  },
+
   data() {
     return {
-
-      model: {
-        name: 'Foo',
-        email: 'foo@bar.invalid',
-      },
-
-      schema: {
-        fields: [
-
-          {
-            type: 'text',
-            label: 'Your Name',
-            model: 'name',
-          },
-
-          {
-            type: 'email',
-            label: 'Your Email',
-            model: 'email',
-          },
-
-        ],
-      }
+      schema: null,
     };
   },
 
