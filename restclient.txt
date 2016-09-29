@@ -1,3 +1,4 @@
+# -*- restclient -*-
 # Get posts
-GET http://127.0.0.1/api/blog/posts
+GET http://127.0.0.1:8088/api/blog/schema/
 Accept: application/json

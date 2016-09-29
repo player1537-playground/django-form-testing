@@ -1,5 +1,7 @@
 from . import models
 from . import serializers
+from .forms import PostForm
+from django.forms import widgets
 from django.shortcuts import render
 from drf_custom_viewsets.viewsets import CustomSerializerViewSet
 from rest_framework import viewsets
@@ -26,25 +28,31 @@ class TagViewSet(mixins.NestedViewSetMixin, CustomSerializerViewSet, viewsets.Mo
 
 class PostSchemaViewSet(viewsets.ViewSet):
     def list(self, request):
-        return Response(dict(
-            model=dict(
-                name='Default Name',
-                email='Default Email',
-            ),
-
-            fields=[
-
-                dict(
+        def schema_for(field):
+            if isinstance(field.widget, widgets.TextInput):
+                return dict(
                     type='text',
-                    label='Your Name',
-                    model='name',
-                ),
+                )
+            elif isinstance(field.widget, widgets.Textarea):
+                return dict(
+                    type='textArea',
+                    rows=int(field.widget.attrs['rows']),
+                )
+            elif isinstance(field.widget, widgets.CheckboxInput):
+                return dict(
+                    type='checkbox',
+                )
+            else:
+                return dict(
+                    type='text',
+                    placeholder='Unknown ' + repr(field.widget),
+                )
 
-                dict(
-                    type='email',
-                    label='Your Email',
-                    model='email',
-                ),
-
-            ]
-        ))
+        return Response({
+            'schema': {
+                'fields': [
+                    schema_for(field)
+                    for name, field in PostForm().fields.items()
+                ],
+            },
+        })
