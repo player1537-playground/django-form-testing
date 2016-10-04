@@ -4,7 +4,13 @@
       <panel>
         <span slot="title">FormTest</span>
         <template v-if="schema">
-          <vue-form-generator :schema="schema" :model="model"></vue-form-generator>
+          <vue-form-generator :schema="schema"
+                              :model="model">
+          </vue-form-generator>
+          <button type="submit"
+                  class="btn btn-primary pull-right">
+            Submit
+          </button>
         </template>
       </panel>
     </div>
