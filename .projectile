@@ -1,0 +1,10 @@
+-/shared
+-/api/venv
+-/api/api/db.sqlite3
+-/api/api/__pycache__
+-/frontend/node_modules
+-/frontend/dist
+-/frontend/tmp
+-/nginx/logs
+-/nginx/cache
+-/TAGS
