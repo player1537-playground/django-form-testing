@@ -37,6 +37,12 @@ export default {
   data() {
     return {
       schema: null,
+      model: {
+        title: '',
+        content: '',
+        published: false,
+        tag: '',
+      },
     };
   },
 
