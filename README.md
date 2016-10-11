@@ -3,6 +3,62 @@
 A test application to try different methods for converting Django class-based
 forms to VueFormGenerator schemas.
 
+# Example
+
+Given a Django setup like this:
+
+```python
+class Post(models.Model):
+    title = models.CharField(max_length=255)
+    content = models.TextField(max_length=10000)
+    published = models.BooleanField(default=False)
+
+class PostForm(forms.ModelForm):
+    class Meta:
+        model = Post
+        fields = ('title', 'content', 'published')
+
+class PostSchemaViewSet(viewsets.ViewSet):
+    def list(self, request):
+    return Response(Schema().render(PostForm))
+```
+
+We can get a schema that is useable with VueFormGenerator:
+
+```json
+{
+    "schema": {
+        "fields": [
+            {
+                "model": "Title",
+                "default": null,
+                "label": "Title",
+                "required": true,
+                "hint": "",
+                "type": "text"
+            },
+            {
+                "type": "textArea",
+                "model": "Content",
+                "default": null,
+                "label": "Content",
+                "required": true,
+                "hint": "",
+                "rows": 10
+            },
+            {
+                "model": "Published",
+                "default": null,
+                "label": "Published",
+                "required": false,
+                "hint": "",
+                "type": "checkbox"
+            }
+        ]
+    }
+}
+```
+
 # Usage
 
 The short answer to how to use is:
