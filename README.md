@@ -91,3 +91,29 @@ http://localhost:80
 ```
 
 When we want to kill the server, we can simply Ctrl-C the Make process.
+
+# Interesting Files
+
+The bulk of the interesting code for this project is found in the
+[views.py](api/api/blog/views.py) file.
+
+# Todo
+
+- [ ] Create a standalone application for form translation
+- [ ] Add support for the rest of the components (from
+  [VueFormGenerator](https://icebob.gitbooks.io/vueformgenerator/content/fields/))
+    - [X] checkbox
+    - [ ] checklist
+    - [ ] color
+    - [ ] email
+    - [ ] image
+    - [ ] label
+    - [ ] number
+    - [ ] password
+    - [ ] range
+    - [ ] select
+    - [ ] submit
+    - [ ] switch
+    - [X] text
+    - [X] textArea
+- [ ] Add tests for basic functionality
