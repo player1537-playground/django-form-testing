@@ -8,6 +8,8 @@ from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework_extensions import mixins
+from collections import OrderedDict
+import copy
 
 # Create your views here.
 
@@ -26,66 +28,163 @@ class TagViewSet(mixins.NestedViewSetMixin, CustomSerializerViewSet, viewsets.Mo
         'retrieve': serializers.TagDetailSerializer,
     }
 
-cache = {}
+################
+
+class ComponentRegistry(object):
+    def __init__(self):
+        self.components = dict()
+
+    def add(self, widget_cls, component_cls):
+        self.components[widget_cls] = component_cls()
+
+    def lookup(self, field):
+        for (widget_cls, component) in self.components.items():
+            if isinstance(field.widget, widget_cls):
+                return component
+        raise KeyError('Could not find component "{!r}"'.format(component))
+
+registry = ComponentRegistry()
 
 def register_schema_for(widget_cls):
-    def wrapper(func):
-        cache[widget_cls] = func
-        return func
+    def wrapper(component_cls):
+        registry.add(widget_cls, component_cls)
+        return component_cls
     return wrapper
 
-def schema_for(form_cls):
-    def lookup(field):
-        for (widget_cls, func) in cache.items():
-            if isinstance(field.widget, widget_cls):
-                return func
+class DeclarativeFieldsMetaclass(type):
+    """
+    Metaclass that collects Fields declared on the base classes.
+    """
+    def __new__(mcs, name, bases, attrs):
+        current_fields = []
+        for key, value in list(attrs.items()):
+            if isinstance(value, Field):
+                current_fields.append((key, value))
+                attrs.pop(key)
 
-    form = form_cls()
+        attrs['declared_fields'] = OrderedDict(current_fields)
 
-    return dict(
-        schema=dict(
-            fields=[
-                lookup(field)(name, field)
-                for name, field in form.fields.items()
-            ],
-        ),
-    )
+        new_class = super().__new__(mcs, name, bases, attrs)
 
-def base_schema(name, field, **kwargs):
-    return dict(
-        label=field.label,
-        hint=field.help_text,
-        model=name,
-        default=getattr(field, 'default', None),
-        required=field.required,
-        **kwargs,
-    )
+        # Walk through the MRO.
+        declared_fields = OrderedDict()
+        for base in reversed(new_class.__mro__):
+            # Collect fields from base class.
+            if hasattr(base, 'declared_fields'):
+                declared_fields.update(base.declared_fields)
+
+            # Field shadowing.
+            for attr, value in base.__dict__.items():
+                if value is None and attr in declared_fields:
+                    declared_fields.pop(attr)
+
+        new_class.base_fields = declared_fields
+        new_class.declared_fields = declared_fields
+        new_class.attrs = declared_fields
+
+        return new_class
+
+class Schema(object):
+    """
+    A schema takes in a form and returns a dictionary representing the fields
+    in it.
+    """
+    def render(self, form_cls):
+        return dict(
+            schema=dict(
+                fields=[
+                    registry.lookup(field).render(field)
+                    for (name, field) in form_cls().fields.items()
+                ],
+            ),
+        )
+
+class Component(object):
+    def __init__(self, attrs=None):
+        if attrs is None and self.attrs is None:
+            self.attrs = dict()
+        elif attrs is not None and self.attrs is not None:
+            self.attrs.update(attrs)
+        else:
+            pass  # Don't need to do anything
+
+    def render(self, field, attrs=None):
+        if attrs is None:
+            attrs = dict()
+
+        d = dict()
+
+        for (key, value) in self.attrs.items():
+            d[key] = value.render(field=field)
+
+        for (key, value) in attrs:
+            d[key] = value.render(field=field)
+
+        return d
+
+class Field(object):
+    def render(self, field):
+        raise NotImplementedError('Field.render needs to be defined')
+
+class Attr(Field):
+    def __init__(self, attr, default=None, type=None):
+        self.attr = attr
+        self.default = default
+        if type is None:
+            self.type = lambda x: x
+        else:
+            self.type = type
+
+    def render(self, field):
+        try:
+            x = field
+            for attr in self.attr.split('.'):
+                x = getattr(x, attr)
+            return self.type(x)
+        except AttributeError:
+            return self.default
+
+class Name(Field):
+    def render(self, field):
+        return field.label
+
+class Func(Field):
+    def __init__(self, func):
+        self.func = func
+
+    def render(self, field):
+        return self.func(field)
+
+class Literal(Field):
+    def __init__(self, value):
+        self.value = value
+
+    def render(self, *args, **kwargs):
+        return self.value
+
+class BaseComponent(Component, metaclass=DeclarativeFieldsMetaclass):
+    label = Attr('label')
+    hint = Attr('help_text')
+    model = Name()
+    default = Attr('default', default=None)
+    required = Attr('required')
 
 @register_schema_for(widgets.TextInput)
-def schema_for_text_input(name, field):
-    return base_schema(
-        name,
-        field,
-        type='text',
-    )
+class TextComponent(BaseComponent, metaclass=DeclarativeFieldsMetaclass):
+    type = Literal('text')
 
 @register_schema_for(widgets.Textarea)
-def schema_for_textarea(name, field):
-    return base_schema(
-        name,
-        field,
-        type='textArea',
-        rows=int(field.widget.attrs['rows']),
-    )
+class TextAreaComponent(BaseComponent, metaclass=DeclarativeFieldsMetaclass):
+    type = Literal('textArea')
+    rows = Func(lambda field: int(field.widget.attrs['rows']))
 
 @register_schema_for(widgets.CheckboxInput)
-def schema_for_checkbox_input(name, field):
-    return base_schema(
-        name,
-        field,
-        type='checkbox',
-    )
+class CheckboxComponent(BaseComponent, metaclass=DeclarativeFieldsMetaclass):
+    type = Literal('checkbox')
+
+################
 
 class PostSchemaViewSet(viewsets.ViewSet):
     def list(self, request):
-        return Response(schema_for(PostForm))
+        schema = Schema()
+        return Response(schema.render(PostForm))
