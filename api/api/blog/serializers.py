@@ -3,6 +3,7 @@ from rest_framework_extensions import fields
 from rest_framework_extensions.utils import compose_parent_pk_kwarg_name
 from . import models
 
+
 class TagSerializer(serializers.ModelSerializer):
     resource_uri = fields.ResourceUriField(
         view_name='tag-detail',
@@ -23,6 +24,7 @@ class TagSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         print('Tag.create', validated_data)
         return models.Tag.objects.create(**validated_data)
+
 
 class PostSerializer(serializers.ModelSerializer):
     resource_uri = fields.ResourceUriField(
@@ -73,9 +75,11 @@ class PostSerializer(serializers.ModelSerializer):
         post = models.Post.objects.create(**validated_data, tag=tag)
         return post
 
+
 class TagDetailSerializer(TagSerializer):
     class Meta(TagSerializer.Meta):
         exclude = ()
+
 
 class PostDetailSerializer(PostSerializer):
     class Meta(PostSerializer.Meta):
