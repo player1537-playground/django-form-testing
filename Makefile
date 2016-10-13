@@ -62,7 +62,7 @@ run:
 depend: api/depend frontend/depend nginx/depend
 
 .PHONY: check
-check:
+check: api/check frontend/check nginx/check
 	./scripts/env.bash diff
 
 .PHONY: clean

@@ -1,0 +1,2 @@
+# Check code for style problems
+flake8
